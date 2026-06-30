@@ -64,7 +64,7 @@
   .pal-row + .pal-row, .pal-foot{border-top:1px dashed var(--rule)}
   .pal-name{font-family:var(--disp); font-size:14px; letter-spacing:.04em; text-transform:uppercase; min-width:132px; display:flex; align-items:center; gap:8px}
   .pal-name .now{width:14px; height:14px; border-radius:2px; border:1px solid rgba(0,0,0,.35); flex:none}
-  .pal-name small{font-family:var(--mono); font-size:9px; letter-spacing:.03em; text-transform:none; color:var(--faint); font-weight:400}
+  .pal-row small{font-family:var(--mono); font-size:9px; letter-spacing:.03em; text-transform:none; color:var(--faint); font-weight:400}
   .chips{display:flex; gap:6px; flex-wrap:wrap}
   .chip{width:22px; height:22px; border-radius:3px; border:1px solid rgba(0,0,0,.3); cursor:pointer; padding:0; transition:transform .08s}
   .chip:hover{transform:scale(1.14)}
@@ -433,8 +433,8 @@ function applyPreset(name){ const map = PRESETS[name]; if(map) ORDER.forEach(m =
     const sub = PAL_SUB[m] ? ` <small>${PAL_SUB[m]}</small>` : "";
     const label = m==="Other" ? "Non-Beatle" : m;
     return `<div class="pal-row" data-m="${m}">
-      <span class="pal-name"><span class="now"></span>${label}${sub}</span>
-      <span class="chips">${chips}</span>
+      <span class="pal-name"><span class="now"></span>${label}</span>
+      <span class="chips">${chips}</span>${sub}
     </div>`;
   }).join("");
   body.innerHTML = rows +
