@@ -387,7 +387,6 @@ const PALETTE = [
   {name:"Pink",   hex:"#D45D9E", t:"#ffffff"}
 ];
 const DEFAULT_COLORS = {Paul:"#2B4FA2", John:"#C2362B", George:"#2E7D44", Ringo:"#E8B021", Other:"#7A4FB0"};
-const PAL_SUB = {Other:"sessions · covers · guests"};
 const COLORS = Object.assign({}, DEFAULT_COLORS);
 
 function setColor(member, hex){
@@ -430,11 +429,10 @@ function applyPreset(name){ const map = PRESETS[name]; if(map) ORDER.forEach(m =
     const chips = PALETTE.map(c=>
       `<button class="chip" type="button" data-hex="${c.hex}" title="${c.name}" aria-label="Set ${m==="Other"?"Non-Beatle":m} to ${c.name}" style="background:${c.hex}"></button>`
     ).join("");
-    const sub = PAL_SUB[m] ? ` <small>${PAL_SUB[m]}</small>` : "";
     const label = m==="Other" ? "Non-Beatle" : m;
     return `<div class="pal-row" data-m="${m}">
       <span class="pal-name"><span class="now"></span>${label}</span>
-      <span class="chips">${chips}</span>${sub}
+      <span class="chips">${chips}</span>
     </div>`;
   }).join("");
   body.innerHTML = rows +
