@@ -107,6 +107,8 @@
   .chip:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
   .pal-foot{display:flex; align-items:center; gap:12px 14px; padding-top:11px; margin-top:3px; flex-wrap:wrap}
   .pal-foot .note-mono{font-family:var(--mono); font-size:10px; color:var(--faint); letter-spacing:.02em}
+  .pal-foot .note-mono a{color:var(--muted); text-decoration:underline; text-underline-offset:2px}
+  .pal-foot .note-mono a:hover{color:var(--ink)}
   .pal-actions{margin-left:auto; display:flex; align-items:center; gap:8px; flex-wrap:wrap}
   .pal-preset{font-family:var(--mono); font-size:10px; letter-spacing:.05em; color:var(--ink); background:var(--label2); border:1px solid var(--rule-strong); border-radius:3px; padding:6px 11px; cursor:pointer; display:inline-flex; align-items:center; gap:7px}
   .pal-preset:hover{border-color:var(--ink); background:#ece2cb}
@@ -818,7 +820,7 @@ function applyPreset(name){ const map = PRESETS[name]; if(map) ORDER.forEach(m =
     </div>`;
   }).join("");
   body.innerHTML = rows +
-    `<div class="pal-foot"><span class="note-mono">choose which colour represents each Beatle for you</span>
+    `<div class="pal-foot"><span class="note-mono">Choose which colour represents each Beatle for you, or fight about it <a href="https://www.reddit.com/r/beatles/s/UX53teoHZy" target="_blank" rel="noopener noreferrer">here</a>.</span>
        <span class="pal-actions">
          <button class="pal-preset" type="button" id="palPepper" title="JOHN GREEN · RINGO PINK · PAUL BLUE · GEORGE RED">
            <span class="swdots"><i style="background:#2B4FA2"></i><i style="background:#2E7D44"></i><i style="background:#C2362B"></i><i style="background:#D45D9E"></i></span>SGT. PEPPER&rsquo;S</button>
