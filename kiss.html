@@ -1,0 +1,779 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KISS: Contribution Ledger</title>
+<link rel="icon" href="kiss.ico" type="image/x-icon">
+<meta name="description" content="A contribution ledger for KISS songs, using the original four solo-album colours.">
+<style>
+  :root{
+    --paper:#efe9dc;
+    --panel:#fbf6ec;
+    --panel2:#f2eadc;
+    --ink:#15120f;
+    --muted:#675f55;
+    --faint:#92887a;
+    --rule:#cabda9;
+    --rule-strong:#a99b87;
+    --paul:#7b46b0;
+    --paul-t:#fff;
+    --gene:#c92b2b;
+    --gene-t:#fff;
+    --ace:#2869b5;
+    --ace-t:#fff;
+    --peter:#2f8a55;
+    --peter-t:#fff;
+    --other:#8d8b84;
+    --other-t:#fff;
+    --ui:Arial, Helvetica, sans-serif;
+    --mono:Consolas, "Courier New", monospace;
+    --shadow:0 1px 0 rgba(0,0,0,.04), 0 14px 34px -24px rgba(21,18,15,.7);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%; scroll-behavior:smooth}
+  body{
+    margin:0;
+    color:var(--ink);
+    background:var(--paper);
+    font-family:var(--ui);
+    line-height:1.45;
+    background-image:linear-gradient(90deg, rgba(21,18,15,.04) 1px, transparent 1px), linear-gradient(rgba(21,18,15,.04) 1px, transparent 1px);
+    background-size:18px 18px;
+  }
+  .wrap{max-width:1100px; margin:0 auto; padding:0 20px 72px}
+  header{padding:34px 0 22px}
+  .toprule{border-top:2px solid var(--ink); border-bottom:5px double var(--ink); padding:7px 0; display:flex; justify-content:space-between; align-items:baseline; gap:16px; flex-wrap:wrap}
+  .stamp{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted)}
+  .masthead{display:grid; grid-template-columns:minmax(0,1fr) 286px; gap:22px; align-items:start; margin-top:18px}
+  .masthead-text{min-width:0}
+  h1{font-size:clamp(42px,7.8vw,86px); line-height:.94; letter-spacing:.02em; margin:0 0 8px; text-transform:uppercase; font-weight:900}
+  h1 span{display:block; color:var(--ink)}
+  .sub{font-size:clamp(14px,2vw,17px); max-width:62ch; color:#2a241d; margin:12px 0 0}
+  .solo-grid{border:1px solid var(--rule); background:var(--panel); box-shadow:var(--shadow); border-radius:6px; overflow:hidden}
+  .solo-grid h2{font-family:var(--mono); font-size:11px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin:0; padding:9px 11px; border-bottom:1px solid var(--rule)}
+  .solo-card{display:grid; grid-template-columns:50px minmax(0,1fr); align-items:center; gap:10px; padding:10px 11px; border-bottom:1px dashed var(--rule)}
+  .solo-card:last-child{border-bottom:0}
+  .tile{width:50px; height:50px; border-radius:4px; border:1px solid rgba(0,0,0,.3); box-shadow:inset 0 0 0 2px rgba(255,255,255,.18)}
+  img.tile{display:block; object-fit:cover; object-position:center}
+  .solo-name{font-weight:800; text-transform:uppercase; letter-spacing:.04em}
+  .solo-note{font-family:var(--mono); color:var(--faint); font-size:10px; text-transform:uppercase; letter-spacing:.08em}
+
+  .legend{display:flex; gap:8px 18px; flex-wrap:wrap; margin-top:20px; font-family:var(--mono); font-size:12px}
+  .leg{display:inline-flex; align-items:center; gap:7px; white-space:nowrap}
+  .sw{width:15px; height:15px; border-radius:2px; border:1px solid rgba(0,0,0,.35)}
+  .sw.paul,.tile.paul{background:var(--paul)}
+  .sw.gene,.tile.gene{background:var(--gene)}
+  .sw.ace,.tile.ace{background:var(--ace)}
+  .sw.peter,.tile.peter{background:var(--peter)}
+  .sw.other,.tile.other{background:var(--other); background-image:repeating-linear-gradient(45deg, rgba(0,0,0,.14) 0 4px, transparent 4px 8px)}
+
+  .summary{margin-top:26px; border:1px solid var(--rule); background:var(--panel); box-shadow:var(--shadow); border-radius:4px}
+  .summary-h{font-family:var(--mono); font-size:11px; letter-spacing:.16em; text-transform:uppercase; color:var(--muted); padding:10px 16px; border-bottom:1px solid var(--rule)}
+  .catalogue-summary .summary-h{color:var(--ink); font-weight:700}
+  .summary-grid{display:grid; grid-template-columns:repeat(5, 1fr)}
+  .scol{padding:16px; text-align:center; border-right:1px solid var(--rule)}
+  .scol:last-child{border-right:0}
+  .who{display:flex; justify-content:center; align-items:center; gap:7px; font-weight:900; text-transform:uppercase; letter-spacing:.05em}
+  .big{font-family:var(--mono); font-weight:700; font-size:30px; margin-top:8px; line-height:1}
+  .biglab{font-family:var(--mono); color:var(--muted); font-size:10px; text-transform:uppercase; letter-spacing:.1em}
+  .row2,.row3{font-family:var(--mono); font-size:10.5px; color:#342f29; margin-top:10px}
+  .row2 span,.row3 span{color:var(--muted)}
+  .row2 .statline{display:block; color:#342f29}
+  .row2 .blankline{display:block; height:1.35em}
+  .row3{padding-top:9px; border-top:1px dashed var(--rule); line-height:1.35}
+  .row3 b{font-weight:700; color:var(--ink); letter-spacing:.08em; text-transform:uppercase}
+  .row3 a{display:block; color:var(--ink); margin:2px 0 5px; overflow-wrap:anywhere; text-decoration:underline; text-underline-offset:2px}
+  .album-summary{margin-top:8px; margin-bottom:2px}
+  .album-summary[hidden]{display:none}
+  .album-summary .summary-h{display:flex; align-items:center; justify-content:space-between; gap:10px}
+  .album-summary .summary-h .who-album{color:var(--ink); font-weight:700}
+  .album-summary .summary-h .cnt{color:var(--faint); letter-spacing:.1em; flex:none}
+
+  .controls{position:sticky; top:0; z-index:10; display:flex; align-items:flex-end; flex-wrap:wrap; gap:10px; padding:12px 0; margin-top:28px; background:linear-gradient(var(--paper) 82%, rgba(239,233,220,0))}
+  .field{display:flex; flex-direction:column; gap:3px}
+  .field label{font-family:var(--mono); font-size:9.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.14em; padding-left:2px}
+  input[type=search], select{font:14px var(--ui); color:var(--ink); background:var(--panel); border:1px solid var(--rule); border-radius:4px; padding:8px 10px}
+  input[type=search]{min-width:240px}
+  .count{margin-left:auto; font-family:var(--mono); font-size:12px; color:var(--muted); padding-bottom:9px}
+
+  #list{display:flex; flex-direction:column; gap:14px; margin-top:6px}
+  .song{position:relative; border:1px solid var(--rule); background:var(--panel); border-radius:5px; box-shadow:var(--shadow); padding:16px 18px 14px}
+  .song:focus{outline:2px solid var(--ink); outline-offset:2px}
+  .song::before{content:attr(data-no); position:absolute; top:14px; right:16px; font-family:var(--mono); color:var(--faint); font-size:11px; letter-spacing:.08em}
+  .s-title{font-weight:900; text-transform:uppercase; font-size:23px; line-height:1.08; padding-right:56px; letter-spacing:.02em}
+  .s-meta{display:flex; flex-wrap:wrap; gap:4px 14px; margin-top:5px; font-family:var(--mono); font-size:11.5px; color:var(--muted)}
+  .s-meta .pill{color:#342f29}
+  .s-meta b{color:var(--ink); font-weight:700}
+  .mix-wrap{margin-top:13px}
+  .mix{height:34px; display:flex; overflow:hidden; border:1px solid var(--ink); border-radius:3px; background:#d8d0c2}
+  .seg{height:100%; width:0; display:flex; align-items:center; justify-content:center; font-family:var(--mono); font-weight:700; font-size:12px; white-space:nowrap; overflow:hidden; transition:width .65s cubic-bezier(.22,.8,.3,1), filter .12s}
+  .seg.paul{background:var(--paul); color:var(--paul-t)}
+  .seg.gene{background:var(--gene); color:var(--gene-t)}
+  .seg.ace{background:var(--ace); color:var(--ace-t)}
+  .seg.peter{background:var(--peter); color:var(--peter-t)}
+  .seg.other{background:var(--other); color:var(--other-t); background-image:repeating-linear-gradient(45deg, rgba(0,0,0,.14) 0 5px, transparent 5px 10px)}
+  .seg:hover{filter:brightness(1.08) saturate(1.1)}
+  .break{margin-top:12px; border:1px solid var(--rule); border-radius:4px; background:var(--panel2); overflow:hidden}
+  .break-h{display:flex; justify-content:space-between; gap:12px; border-bottom:1px solid var(--rule); padding:7px 12px; color:var(--muted); font-family:var(--mono); font-size:9.5px; letter-spacing:.13em; text-transform:uppercase}
+  .grid{display:grid; grid-template-columns:1.5fr .8fr .8fr .8fr .8fr .9fr 1fr; font-family:var(--mono); font-size:12px}
+  .grid .hd{padding:6px 8px; color:var(--muted); border-bottom:1px solid var(--rule); text-align:right; text-transform:uppercase; letter-spacing:.06em; font-size:9.5px}
+  .grid .hd:first-child{text-align:left}
+  .grid .c{padding:6px 8px; text-align:right; border-bottom:1px solid rgba(202,189,169,.5)}
+  .grid .name{text-align:left; display:flex; align-items:center; gap:7px; font-weight:700}
+  .dot{width:10px; height:10px; border-radius:2px; border:1px solid rgba(0,0,0,.3)}
+  .dot.paul{background:var(--paul)}
+  .dot.gene{background:var(--gene)}
+  .dot.ace{background:var(--ace)}
+  .dot.peter{background:var(--peter)}
+  .dot.other{background:var(--other)}
+  .share{font-weight:700}
+  .tot{color:#342f29}
+  .zero{color:var(--faint)}
+  .b-scroll{overflow-x:auto}
+  .note{margin-top:10px; padding-left:11px; border-left:2px solid var(--rule); color:#342f29; font-size:13px}
+  .method{margin-top:44px; padding-top:22px; border-top:4px double var(--ink)}
+  .method h2{margin:0 0 8px; text-transform:uppercase; letter-spacing:.04em}
+  .method p,.method li{max-width:78ch; color:#302a23; font-size:14.5px}
+  .method code{font-family:var(--mono); background:var(--panel); border:1px solid var(--rule); padding:1px 4px; border-radius:3px}
+  @media(max-width:900px){
+    .masthead{grid-template-columns:1fr}
+    h1{font-size:clamp(44px,12vw,82px)}
+    .solo-grid{max-width:360px}
+  }
+  @media(max-width:760px){
+    .summary-grid{grid-template-columns:repeat(2,1fr)}
+    .scol{border-bottom:1px solid var(--rule)}
+    .scol:nth-child(5){grid-column:1/-1}
+    .grid{min-width:560px}
+    .break{overflow-x:auto}
+    .count{margin-left:0}
+  }
+  @media (prefers-reduced-motion: reduce){ .seg{transition:none} html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="toprule">
+      <span class="stamp">All-song contribution board</span>
+      <span class="stamp" id="trackStamp"></span>
+    </div>
+    <div class="masthead">
+      <div class="masthead-text">
+        <h1>KISS <span>Contribution Ledger</span></h1>
+        <p class="sub">A KISS version of the contribution bars, keyed to the 1978 solo-album colour idea: Paul in purple, Gene in red, Ace in blue, Peter in green. The song list now spans the recorded KISS catalogue table, with non-original members, outside writers, and session players grouped as Other.</p>
+        <div class="legend" id="legend"></div>
+      </div>
+      <section class="solo-grid" aria-label="Solo album colour key">
+        <h2>1978 solo-album colours</h2>
+        <div class="solo-card"><img class="tile paul" src="paul_stanley.jpg" alt="Paul Stanley"><span><span class="solo-name">Paul Stanley</span><br><span class="solo-note">Purple</span></span></div>
+        <div class="solo-card"><img class="tile gene" src="gene.jpg" alt="Gene Simmons"><span><span class="solo-name">Gene Simmons</span><br><span class="solo-note">Red</span></span></div>
+        <div class="solo-card"><img class="tile ace" src="ace.jpg" alt="Ace Frehley"><span><span class="solo-name">Ace Frehley</span><br><span class="solo-note">Blue</span></span></div>
+        <div class="solo-card"><img class="tile peter" src="peter.jpg" alt="Peter Criss"><span><span class="solo-name">Peter Criss</span><br><span class="solo-note">Green</span></span></div>
+      </section>
+    </div>
+  </header>
+
+  <section class="summary catalogue-summary" aria-label="Catalogue-wide summary">
+    <div class="summary-h" id="summaryTitle"></div>
+    <div class="summary-grid" id="summary"></div>
+  </section>
+
+  <div class="controls">
+    <div class="field">
+      <label for="q">Search</label>
+      <input id="q" type="search" placeholder="title, album, writer or singer" autocomplete="off">
+    </div>
+    <div class="field">
+      <label for="album">Album</label>
+      <select id="album"></select>
+    </div>
+    <div class="field">
+      <label for="sort">Sort by</label>
+      <select id="sort">
+        <option value="cat">Release order</option>
+        <option value="year">Year</option>
+        <option value="title">Title A-Z</option>
+        <option value="Paul">Most Paul</option>
+        <option value="Gene">Most Gene</option>
+        <option value="Ace">Most Ace</option>
+        <option value="Peter">Most Peter</option>
+        <option value="Other">Most Other</option>
+      </select>
+    </div>
+    <div class="count" id="count"></div>
+  </div>
+
+  <section class="summary album-summary" id="albumSummary" hidden aria-label="Selected-album summary">
+    <div class="summary-h"><span class="who-album" id="albumSummaryTitle"></span><span class="cnt" id="albumSummaryCount"></span></div>
+    <div class="summary-grid" id="albumSummaryGrid"></div>
+  </section>
+
+  <div id="list"></div>
+
+  <footer class="method">
+    <h2>How this KISS chart is scored</h2>
+    <p>Each song uses the same four-lane model as the Beatles page: <code>writing 45</code>, <code>lead vocal 20</code>, <code>backing vocal 10</code>, and <code>playing 25</code>. Song titles, writers, lead vocalists, releases, and years are seeded from the public List of songs recorded by Kiss table.</p>
+    <p>Listed writers and shared lead vocals split evenly. Backing vocals are inferred from the credited lead singer(s) and the album-era playing lineup, while non-original members, outside writers, and session players are grouped as Other. Playing points use album-era defaults rather than exhaustive session-by-session credits.</p>
+  </footer>
+</div>
+
+<script>
+const MEMBERS = ["Paul","Gene","Ace","Peter","Other"];
+const CLS = {Paul:"paul", Gene:"gene", Ace:"ace", Peter:"peter", Other:"other"};
+const WEIGHTS = {write:45, lead:20, back:10, instr:25};
+const DEFAULT_PLAY = {Paul:25, Gene:25, Ace:25, Peter:25};
+
+const NAME_TO_MEMBER = {
+  "Paul Stanley":"Paul",
+  "Gene Simmons":"Gene",
+  "Ace Frehley":"Ace",
+  "Peter Criss":"Peter"
+};
+
+function creditMap(names){
+  const out = {};
+  const clean = names.map(n=>n.trim()).filter(n=>n && n !== "none (instrumental)");
+  if(!clean.length) return out;
+  const each = 100 / clean.length;
+  clean.forEach(name=>{
+    const member = NAME_TO_MEMBER[name] || "Other";
+    out[member] = (out[member] || 0) + each;
+  });
+  return out;
+}
+
+function playingMap(album, year, title){
+  if(["KISS", "Hotter Than Hell", "Dressed to Kill", "Destroyer", "Rock and Roll Over", "Love Gun", "Love Gun (deluxe edition reissue only)", "Alive II"].includes(album)){
+    return DEFAULT_PLAY;
+  }
+  if(album === "Dynasty"){
+    return title === "Dirty Livin'" ? DEFAULT_PLAY : {Paul:25, Gene:25, Ace:25, Other:25};
+  }
+  if(album === "Unmasked" || album === "Music from \"The Elder\""){
+    return {Paul:25, Gene:25, Ace:25, Other:25};
+  }
+  if(album === "Psycho Circus" || album === "Psycho Circus (Japanese edition only)"){
+    return {Paul:25, Gene:25, Ace:15, Peter:10, Other:25};
+  }
+  if(album === "The Box Set"){
+    return {Paul:20, Gene:20, Ace:15, Peter:15, Other:30};
+  }
+  if(year >= 1982){
+    return {Paul:25, Gene:25, Other:50};
+  }
+  return DEFAULT_PLAY;
+}
+
+function backingMap(lead, instr){
+  const out = {};
+  const hasLead = MEMBERS.some(m=>(lead[m] || 0) > 0);
+  if(!hasLead) return out;
+  const singers = MEMBERS.filter(m=>(instr[m] || 0) > 0 && (lead[m] || 0) <= 0);
+  if(!singers.length) return out;
+  const each = 100 / singers.length;
+  singers.forEach(m=>{ out[m] = each; });
+  return out;
+}
+
+const RAW_DATA_TSV = `100,000 Years	KISS	1974	Paul Stanley/Gene Simmons	Paul Stanley	
+Black Diamond	KISS	1974	Paul Stanley	Peter Criss/Paul Stanley	
+Cold Gin	KISS	1974	Ace Frehley	Gene Simmons	
+Deuce	KISS	1974	Gene Simmons	Gene Simmons	
+Firehouse	KISS	1974	Paul Stanley	Paul Stanley	
+Kissin' Time	KISS	1974	Kal Mann/Bernie Lowe	Gene Simmons/Paul Stanley/Peter Criss	Bobby Rydell cover
+Let Me Know	KISS	1974	Paul Stanley	Gene Simmons/Paul Stanley	
+Love Theme from Kiss	KISS	1974	Paul Stanley/Gene Simmons/Ace Frehley/Peter Criss	none (instrumental)	
+Nothin' to Lose	KISS	1974	Gene Simmons	Gene Simmons/Peter Criss	
+Strutter	KISS	1974	Paul Stanley/Gene Simmons	Paul Stanley	
+All the Way	Hotter Than Hell	1974	Gene Simmons	Gene Simmons	
+Comin' Home	Hotter Than Hell	1974	Paul Stanley/Ace Frehley	Paul Stanley	
+Goin' Blind	Hotter Than Hell	1974	Gene Simmons/Stephen Coronel	Gene Simmons	
+Got to Choose	Hotter Than Hell	1974	Paul Stanley	Paul Stanley	
+Hotter than Hell	Hotter Than Hell	1974	Paul Stanley	Paul Stanley	
+Let Me Go, Rock 'n' Roll	Hotter Than Hell	1974	Gene Simmons/Paul Stanley	Gene Simmons	
+Mainline	Hotter Than Hell	1974	Paul Stanley	Peter Criss	
+Parasite	Hotter Than Hell	1974	Ace Frehley	Gene Simmons	
+Strange Ways	Hotter Than Hell	1974	Ace Frehley	Peter Criss	
+Watchin' You	Hotter Than Hell	1974	Gene Simmons	Gene Simmons	
+Anything for My Baby	Dressed to Kill	1975	Paul Stanley	Paul Stanley	
+C'mon and Love Me	Dressed to Kill	1975	Paul Stanley	Paul Stanley	
+Getaway	Dressed to Kill	1975	Ace Frehley	Peter Criss	
+Ladies in Waiting	Dressed to Kill	1975	Gene Simmons	Gene Simmons	
+Love Her All I Can	Dressed to Kill	1975	Paul Stanley	Paul Stanley	
+Rock and Roll All Nite	Dressed to Kill	1975	Gene Simmons/Paul Stanley	Gene Simmons	
+Rock Bottom	Dressed to Kill	1975	Paul Stanley/Ace Frehley	Paul Stanley	
+Room Service	Dressed to Kill	1975	Paul Stanley	Paul Stanley	
+She	Dressed to Kill	1975	Gene Simmons/Stephen Coronel	Gene Simmons/Paul Stanley	
+Two Timer	Dressed to Kill	1975	Gene Simmons	Gene Simmons	
+Beth	Destroyer	1976	Peter Criss/Stan Penridge/Bob Ezrin	Peter Criss	
+Detroit Rock City	Destroyer	1976	Paul Stanley/Bob Ezrin	Paul Stanley	
+Do You Love Me	Destroyer	1976	Paul Stanley/Kim Fowley/Bob Ezrin	Paul Stanley	
+Flaming Youth	Destroyer	1976	Ace Frehley/Paul Stanley/Gene Simmons/Bob Ezrin	Paul Stanley	
+God of Thunder	Destroyer	1976	Paul Stanley	Gene Simmons	
+Great Expectations	Destroyer	1976	Gene Simmons/Bob Ezrin	Gene Simmons	
+King of the Night Time World	Destroyer	1976	Paul Stanley/Kim Fowley/Mark Anthony/Bob Ezrin	Paul Stanley	
+Rock and Roll Demons	Destroyer	1976	Gene Simmons/Paul Stanley/Bob Ezrin	none (instrumental)	Hidden track also known as "Rock and Roll Party"
+Shout It Out Loud	Destroyer	1976	Paul Stanley/Gene Simmons/Bob Ezrin	Paul Stanley/Gene Simmons	
+Sweet Pain	Destroyer	1976	Gene Simmons	Gene Simmons	
+Baby Driver	Rock and Roll Over	1976	Peter Criss/Stan Penridge	Peter Criss	
+Calling Dr. Love	Rock and Roll Over	1976	Gene Simmons	Gene Simmons	
+Hard Luck Woman	Rock and Roll Over	1976	Paul Stanley	Peter Criss	
+I Want You	Rock and Roll Over	1976	Paul Stanley	Paul Stanley	
+Ladies Room	Rock and Roll Over	1976	Gene Simmons	Gene Simmons	
+Love 'Em and Leave 'Em	Rock and Roll Over	1976	Gene Simmons	Gene Simmons	
+Makin' Love	Rock and Roll Over	1976	Paul Stanley/Sean Delaney	Paul Stanley	
+Mr. Speed	Rock and Roll Over	1976	Paul Stanley/Sean Delaney	Paul Stanley	
+See You in Your Dreams	Rock and Roll Over	1976	Gene Simmons	Gene Simmons	
+Take Me	Rock and Roll Over	1976	Paul Stanley/Sean Delaney	Paul Stanley	
+Almost Human	Love Gun	1977	Gene Simmons	Gene Simmons	
+Christine Sixteen	Love Gun	1977	Gene Simmons	Gene Simmons	
+Got Love for Sale	Love Gun	1977	Gene Simmons	Gene Simmons	
+Hooligan	Love Gun	1977	Peter Criss/Stan Penridge	Peter Criss	
+I Stole Your Love	Love Gun	1977	Paul Stanley	Paul Stanley	
+Love Gun	Love Gun	1977	Paul Stanley	Paul Stanley	
+Plaster Caster	Love Gun	1977	Gene Simmons	Gene Simmons	
+Shock Me	Love Gun	1977	Ace Frehley	Ace Frehley	
+Then She Kissed Me	Love Gun	1977	Jeff Barry/Ellie Greenwich/Phil Spector	Paul Stanley	The Crystals cover
+Tomorrow and Tonight	Love Gun	1977	Paul Stanley	Paul Stanley	
+I Know Who You Are	Love Gun (deluxe edition reissue only)	2014	Gene Simmons	Gene Simmons	
+Much Too Soon	Love Gun (deluxe edition reissue only)	2014	Gene Simmons	Gene Simmons	
+Reputation	Love Gun (deluxe edition reissue only)	2014	Gene Simmons	Gene Simmons	
+All American Man	Alive II	1977	Paul Stanley/Sean Delaney	Paul Stanley	
+Any Way You Want It	Alive II	1977	Dave Clark	Paul Stanley	The Dave Clark Five cover
+Larger than Life	Alive II	1977	Gene Simmons	Gene Simmons	
+Rocket Ride	Alive II	1977	Ace Frehley/Sean Delaney	Ace Frehley	
+Rockin' in the U.S.A.	Alive II	1977	Gene Simmons	Gene Simmons	
+2,000 Man	Dynasty	1979	Mick Jagger/Keith Richards	Ace Frehley	The Rolling Stones cover
+Charisma	Dynasty	1979	Gene Simmons/Howard Marks	Gene Simmons	
+Dirty Livin'	Dynasty	1979	Peter Criss/Stan Penridge/Vini Poncia	Peter Criss	
+Hard Times	Dynasty	1979	Ace Frehley	Ace Frehley	
+I Was Made for Lovin' You	Dynasty	1979	Paul Stanley/Vini Poncia/Desmond Child	Paul Stanley	
+Magic Touch	Dynasty	1979	Paul Stanley	Paul Stanley	
+Save Your Love	Dynasty	1979	Ace Frehley	Ace Frehley	
+Sure Know Something	Dynasty	1979	Paul Stanley/Vini Poncia	Paul Stanley	
+X-Ray Eyes	Dynasty	1979	Gene Simmons	Gene Simmons	
+Easy as It Seems	Unmasked	1980	Paul Stanley/Vini Poncia	Paul Stanley	
+Is That You?	Unmasked	1980	Gerard McMahon	Paul Stanley	
+Naked City	Unmasked	1980	Gene Simmons/Vini Poncia/Bob Kulick/Pepe Castro	Gene Simmons	
+Shandi	Unmasked	1980	Paul Stanley/Vini Poncia	Paul Stanley	
+She's So European	Unmasked	1980	Gene Simmons/Vini Poncia	Gene Simmons	
+Talk to Me	Unmasked	1980	Ace Frehley	Ace Frehley	
+Tomorrow	Unmasked	1980	Paul Stanley/Vini Poncia	Paul Stanley	
+Torpedo Girl	Unmasked	1980	Ace Frehley/Vini Poncia	Ace Frehley	
+Two Sides of the Coin	Unmasked	1980	Ace Frehley	Ace Frehley	
+What Makes the World Go 'Round	Unmasked	1980	Paul Stanley/Vini Poncia	Paul Stanley	
+You're All That I Want	Unmasked	1980	Gene Simmons/Vini Poncia	Gene Simmons	
+A World Without Heroes	Music from "The Elder"	1981	Paul Stanley/Gene Simmons/Bob Ezrin/Lou Reed	Gene Simmons	
+Dark Light	Music from "The Elder"	1981	Ace Frehley/Gene Simmons/Anton Fig/Lou Reed	Ace Frehley	
+Escape from the Island	Music from "The Elder"	1981	Ace Frehley/Eric Carr/Bob Ezrin	none (instrumental)	
+Fanfare	Music from "The Elder"	1981	Paul Stanley/Bob Ezrin	none (instrumental)	
+I	Music from "The Elder"	1981	Gene Simmons/Bob Ezrin	Paul Stanley/Gene Simmons	
+Just a Boy	Music from "The Elder"	1981	Paul Stanley/Bob Ezrin	Paul Stanley	
+Mr. Blackwell	Music from "The Elder"	1981	Gene Simmons/Lou Reed	Gene Simmons	
+Odyssey	Music from "The Elder"	1981	Tony Powers	Paul Stanley	
+Only You	Music from "The Elder"	1981	Gene Simmons	Gene Simmons/Paul Stanley	
+The Oath	Music from "The Elder"	1981	Paul Stanley/Bob Ezrin/Tony Powers	Paul Stanley	
+Under the Rose	Music from "The Elder"	1981	Gene Simmons/Eric Carr	Gene Simmons	
+Down on Your Knees	Killers	1982	Paul Stanley/Mikel Japp/Bryan Adams	Paul Stanley	
+I'm a Legend Tonight	Killers	1982	Paul Stanley/Adam Mitchell	Paul Stanley	
+Nowhere to Run	Killers	1982	Paul Stanley	Paul Stanley	
+Partners in Crime	Killers	1982	Paul Stanley/Adam Mitchell	Paul Stanley	
+Creatures of the Night	Creatures of the Night	1982	Paul Stanley/Adam Mitchell	Paul Stanley	
+Danger	Creatures of the Night	1982	Paul Stanley/Adam Mitchell	Paul Stanley	
+I Love It Loud	Creatures of the Night	1982	Gene Simmons/Vinnie Vincent	Gene Simmons	
+I Still Love You	Creatures of the Night	1982	Paul Stanley/Vinnie Vincent	Paul Stanley	
+Keep Me Comin'	Creatures of the Night	1982	Paul Stanley/Adam Mitchell	Paul Stanley	
+Killer	Creatures of the Night	1982	Gene Simmons/Vinnie Vincent	Gene Simmons	
+Rock and Roll Hell	Creatures of the Night	1982	Gene Simmons/Bryan Adams/Jim Vallance	Gene Simmons	
+Saint and Sinner	Creatures of the Night	1982	Gene Simmons/Mikel Japp	Gene Simmons	
+War Machine	Creatures of the Night	1982	Gene Simmons/Bryan Adams/Jim Vallance	Gene Simmons	
+A Million to One	Lick It Up	1983	Paul Stanley/Vinnie Vincent	Paul Stanley	
+All Hell's Breakin' Loose	Lick It Up	1983	Eric Carr/Paul Stanley/Vinnie Vincent/Gene Simmons	Paul Stanley	
+And on the 8th Day	Lick It Up	1983	Gene Simmons/Vinnie Vincent	Gene Simmons	
+Dance All Over Your Face	Lick It Up	1983	Gene Simmons	Gene Simmons	
+Exciter	Lick It Up	1983	Paul Stanley/Vinnie Vincent	Paul Stanley	
+Fits Like a Glove	Lick It Up	1983	Gene Simmons	Gene Simmons	
+Gimme More	Lick It Up	1983	Paul Stanley/Vinnie Vincent	Paul Stanley	
+Lick It Up	Lick It Up	1983	Paul Stanley/Vinnie Vincent	Paul Stanley	
+Not for the Innocent	Lick It Up	1983	Gene Simmons/Vinnie Vincent	Gene Simmons	
+Young and Wasted	Lick It Up	1983	Gene Simmons/Vinnie Vincent	Gene Simmons	
+Burn Bitch Burn	Animalize	1984	Gene Simmons	Gene Simmons	
+Get All You Can Take	Animalize	1984	Paul Stanley/Mitch Weissman	Paul Stanley	
+Heaven's on Fire	Animalize	1984	Paul Stanley/Desmond Child	Paul Stanley	
+I've Had Enough (Into the Fire)	Animalize	1984	Paul Stanley/Desmond Child	Paul Stanley	
+Lonely Is the Hunter	Animalize	1984	Gene Simmons	Gene Simmons	
+Murder in High-Heels	Animalize	1984	Gene Simmons/Mitch Weissman	Gene Simmons	
+Thrills in the Night	Animalize	1984	Paul Stanley/Jean Beauvoir	Paul Stanley	
+Under the Gun	Animalize	1984	Paul Stanley/Desmond Child/Eric Carr	Paul Stanley	
+While the City Sleeps	Animalize	1984	Gene Simmons/Mitch Weissman	Gene Simmons	
+Any Way You Slice It	Asylum	1985	Gene Simmons/Howard Rice	Gene Simmons	
+I'm Alive	Asylum	1985	Paul Stanley/Desmond Child/Bruce Kulick	Paul Stanley	
+King of the Mountain	Asylum	1985	Paul Stanley/Desmond Child/Bruce Kulick	Paul Stanley	
+Love's a Deadly Weapon	Asylum	1985	Paul Stanley/Gene Simmons/Rod Swenson/Wes Beech	Gene Simmons	
+Radar for Love	Asylum	1985	Paul Stanley/Desmond Child	Paul Stanley	
+Secretly Cruel	Asylum	1985	Gene Simmons	Gene Simmons	
+Tears Are Falling	Asylum	1985	Paul Stanley	Paul Stanley	
+Trial by Fire	Asylum	1985	Gene Simmons/Bruce Kulick	Gene Simmons	
+Uh! All Night	Asylum	1985	Paul Stanley/Desmond Child/Jean Beauvoir	Paul Stanley	
+Who Wants to Be Lonely	Asylum	1985	Paul Stanley/Desmond Child/Jean Beauvoir	Paul Stanley	
+Bang Bang You	Crazy Nights	1987	Paul Stanley/Desmond Child	Paul Stanley	
+Crazy Crazy Nights	Crazy Nights	1987	Paul Stanley/Adam Mitchell	Paul Stanley	
+Good Girl Gone Bad	Crazy Nights	1987	Gene Simmons/Davitt Sigerson/Peter Diggins	Gene Simmons	
+Hell or High Water	Crazy Nights	1987	Gene Simmons/Bruce Kulick	Gene Simmons	
+I'll Fight Hell to Hold You	Crazy Nights	1987	Paul Stanley/Adam Mitchell/Bruce Kulick	Paul Stanley	
+My Way	Crazy Nights	1987	Paul Stanley/Desmond Child/Bruce Turgon	Paul Stanley	
+No, No, No	Crazy Nights	1987	Gene Simmons/Bruce Kulick/Eric Carr	Gene Simmons	
+Reason to Live	Crazy Nights	1987	Paul Stanley/Desmond Child	Paul Stanley	
+Thief in the Night	Crazy Nights	1987	Gene Simmons/Mitch Weissman	Gene Simmons	
+Turn On the Night	Crazy Nights	1987	Paul Stanley/Diane Warren	Paul Stanley	
+When Your Walls Come Down	Crazy Nights	1987	Paul Stanley/Adam Mitchell/Bruce Kulick	Paul Stanley	
+(You Make Me) Rock Hard	Smashes, Thrashes & Hits	1988	Paul Stanley/Desmond Child/Diane Warren	Paul Stanley	
+Beth	Smashes, Thrashes & Hits	1988	Peter Criss/Stan Penridge/Bob Ezrin	Eric Carr	
+Let's Put the X in Sex	Smashes, Thrashes & Hits	1988	Paul Stanley/Desmond Child	Paul Stanley	
+Betrayed	Hot in the Shade	1989	Gene Simmons/Tommy Thayer	Gene Simmons	
+Boomerang	Hot in the Shade	1989	Gene Simmons/Bruce Kulick	Gene Simmons	
+Cadillac Dreams	Hot in the Shade	1989	Gene Simmons/Vini Poncia	Gene Simmons	
+Forever	Hot in the Shade	1989	Paul Stanley/Michael Bolton	Paul Stanley	
+Hide Your Heart	Hot in the Shade	1989	Paul Stanley/Desmond Child/Holly Knight	Paul Stanley	
+King of Hearts	Hot in the Shade	1989	Paul Stanley/Vini Poncia	Paul Stanley	
+Little Caesar	Hot in the Shade	1989	Eric Carr/Gene Simmons/Adam Mitchell	Eric Carr	
+Love's a Slap in the Face	Hot in the Shade	1989	Gene Simmons/Vini Poncia	Gene Simmons	
+Prisoner of Love	Hot in the Shade	1989	Gene Simmons/Bruce Kulick	Gene Simmons	
+Read My Body	Hot in the Shade	1989	Paul Stanley/Bob Halligan Jr.	Paul Stanley	
+Rise to It	Hot in the Shade	1989	Paul Stanley/Bob Halligan Jr.	Paul Stanley	
+Silver Spoon	Hot in the Shade	1989	Paul Stanley/Vini Poncia	Paul Stanley	
+Somewhere Between Heaven and Hell	Hot in the Shade	1989	Gene Simmons/Vini Poncia	Gene Simmons	
+The Street Giveth and the Street Taketh Away	Hot in the Shade	1989	Gene Simmons/Tommy Thayer	Gene Simmons	
+You Love Me to Hate You	Hot in the Shade	1989	Paul Stanley/Desmond Child	Paul Stanley	
+Carr Jam 1981	Revenge	1992	Eric Carr	none (instrumental)	
+Domino	Revenge	1992	Gene Simmons	Gene Simmons	
+Every Time I Look at You	Revenge	1992	Paul Stanley/Bob Ezrin	Paul Stanley	
+God Gave Rock 'n' Roll to You II	Revenge	1992	Russ Ballard/Paul Stanley/Gene Simmons/Bob Ezrin	Paul Stanley/Gene Simmons	Argent cover
+Heart of Chrome	Revenge	1992	Paul Stanley/Vinnie Vincent/Bob Ezrin	Paul Stanley	
+I Just Wanna	Revenge	1992	Paul Stanley/Vinnie Vincent	Paul Stanley	
+Paralyzed	Revenge	1992	Gene Simmons/Bob Ezrin	Gene Simmons	
+Spit	Revenge	1992	Gene Simmons/Paul Stanley/Scott van Zen	Gene Simmons/Paul Stanley	
+Take It Off	Revenge	1992	Paul Stanley/Bob Ezrin/Kane Roberts	Paul Stanley	
+Thou Shalt Not	Revenge	1992	Gene Simmons/Jesse Damon	Gene Simmons	
+Tough Love	Revenge	1992	Paul Stanley/Bob Ezrin/Bruce Kulick	Paul Stanley	
+Unholy	Revenge	1992	Gene Simmons/Vinnie Vincent	Gene Simmons	
+Childhood's End	Carnival of Souls: The Final Sessions	1997	Gene Simmons/Tommy Thayer/Bruce Kulick	Gene Simmons	
+Hate	Carnival of Souls: The Final Sessions	1997	Gene Simmons/Bruce Kulick/Scott van Zen	Gene Simmons	
+I Confess	Carnival of Souls: The Final Sessions	1997	Gene Simmons/Ken Tamplin	Gene Simmons	
+I Walk Alone	Carnival of Souls: The Final Sessions	1997	Gene Simmons/Bruce Kulick	Bruce Kulick	
+I Will Be There	Carnival of Souls: The Final Sessions	1997	Paul Stanley/Bruce Kulick/Curtis Cuomo	Paul Stanley	
+In My Head	Carnival of Souls: The Final Sessions	1997	Gene Simmons/Scott van Zen/Jaime St. James	Gene Simmons	
+In the Mirror	Carnival of Souls: The Final Sessions	1997	Paul Stanley/Bruce Kulick/Curtis Cuomo	Paul Stanley	
+It Never Goes Away	Carnival of Souls: The Final Sessions	1997	Paul Stanley/Bruce Kulick/Curtis Cuomo	Paul Stanley	
+Jungle	Carnival of Souls: The Final Sessions	1997	Paul Stanley/Bruce Kulick/Curtis Cuomo	Paul Stanley	
+Master & Slave	Carnival of Souls: The Final Sessions	1997	Paul Stanley/Bruce Kulick/Curtis Cuomo	Paul Stanley	
+Rain	Carnival of Souls: The Final Sessions	1997	Paul Stanley/Bruce Kulick/Curtis Cuomo	Paul Stanley	
+Seduction of the Innocent	Carnival of Souls: The Final Sessions	1997	Gene Simmons/Scott van Zen	Gene Simmons	
+Dreamin'	Psycho Circus	1998	Paul Stanley/Bruce Kulick	Paul Stanley	
+I Finally Found My Way	Psycho Circus	1998	Paul Stanley/Bob Ezrin	Peter Criss	
+I Pledge Allegiance to the State of Rock & Roll	Psycho Circus	1998	Paul Stanley/Curtis Cuomo/Holly Knight	Paul Stanley	
+Into the Void	Psycho Circus	1998	Ace Frehley/Karl Cochran	Ace Frehley	
+Journey of 1,000 Years	Psycho Circus	1998	Gene Simmons	Gene Simmons	
+Psycho Circus	Psycho Circus	1998	Paul Stanley/Curtis Cuomo	Paul Stanley	
+Raise Your Glasses	Psycho Circus	1998	Paul Stanley/Holly Knight	Paul Stanley	
+We Are One	Psycho Circus	1998	Gene Simmons	Gene Simmons	
+Within	Psycho Circus	1998	Gene Simmons	Gene Simmons	
+You Wanted the Best	Psycho Circus	1998	Gene Simmons	Gene Simmons/Paul Stanley/Peter Criss/Ace Frehley	
+In Your Face	Psycho Circus (Japanese edition only)	1998	Gene Simmons	Ace Frehley	
+Nothing Can Keep Me from You	Detroit Rock City	1999	Diane Warren	Paul Stanley	
+Ain't That Peculiar	The Box Set	2001	Eric Carr/Smokey Robinson/Pete Moore/Bobby Rogers/Marv Tarplin	Eric Carr	
+Bad, Bad Lovin'	The Box Set	2001	Gene Simmons	Gene Simmons	
+Doncha Hesitate	The Box Set	2001	Paul Stanley	Paul Stanley	
+It's My Life	The Box Set	2001	Paul Stanley/Gene Simmons	Gene Simmons	
+Leeta	The Box Set	2001	Gene Simmons	Gene Simmons	
+Mad Dog	The Box Set	2001	Gene Simmons	Gene Simmons	
+Stop, Look to Listen	The Box Set	2001	Paul Stanley	Paul Stanley	
+Time Traveler	The Box Set	2001	Paul Stanley/Desmond Child	Paul Stanley	
+All for the Glory	Sonic Boom	2009	Paul Stanley/Gene Simmons	Eric Singer	
+Danger Us	Sonic Boom	2009	Paul Stanley	Paul Stanley	
+Hot and Cold	Sonic Boom	2009	Gene Simmons	Gene Simmons	
+I'm an Animal	Sonic Boom	2009	Paul Stanley/Gene Simmons/Tommy Thayer	Gene Simmons	
+Modern Day Delilah	Sonic Boom	2009	Paul Stanley	Paul Stanley	
+Never Enough	Sonic Boom	2009	Paul Stanley/Tommy Thayer	Paul Stanley	
+Russian Roulette	Sonic Boom	2009	Gene Simmons/Paul Stanley	Gene Simmons	
+Say Yeah	Sonic Boom	2009	Paul Stanley	Paul Stanley	
+Stand	Sonic Boom	2009	Paul Stanley/Gene Simmons	Paul Stanley/Gene Simmons	
+When Lightning Strikes	Sonic Boom	2009	Tommy Thayer/Paul Stanley	Tommy Thayer	
+Yes I Know (Nobody's Perfect)	Sonic Boom	2009	Gene Simmons	Gene Simmons	
+All for the Love of Rock & Roll	Monster	2012	Paul Stanley	Eric Singer	
+Back to the Stone Age	Monster	2012	Gene Simmons/Paul Stanley/Tommy Thayer/Eric Singer	Gene Simmons	
+Eat Your Heart Out	Monster	2012	Gene Simmons	Gene Simmons	
+Freak	Monster	2012	Paul Stanley/Tommy Thayer	Paul Stanley	
+Hell or Hallelujah	Monster	2012	Paul Stanley	Paul Stanley	
+Last Chance	Monster	2012	Paul Stanley/Gene Simmons/Tommy Thayer	Paul Stanley	
+Long Way Down	Monster	2012	Paul Stanley/Tommy Thayer	Paul Stanley	
+Outta This World	Monster	2012	Tommy Thayer	Tommy Thayer	
+Shout Mercy	Monster	2012	Paul Stanley/Tommy Thayer	Paul Stanley	
+Take Me Down Below	Monster	2012	Gene Simmons/Paul Stanley/Tommy Thayer	Gene Simmons/Paul Stanley	
+The Devil Is Me	Monster	2012	Gene Simmons/Paul Stanley/Tommy Thayer	Gene Simmons	
+Wall of Sound	Monster	2012	Paul Stanley/Gene Simmons/Tommy Thayer	Gene Simmons	
+Right Here Right Now	Monster (digital editions only)	2012	Paul Stanley/Tommy Thayer	Paul Stanley	
+Samurai Son	Yume no Ukiyo ni Saite Mi na	2015	Paul Stanley/Greg Collins	Paul Stanley	With Momoiro Clover Z
+Yume no Ukiyo ni Saite Mi na	Yume no Ukiyo ni Saite Mi na	2015	Paul Stanley/Greg Collins/Yuho Iwasato	Momoiro Clover Z	With Momoiro Clover Z
+Do You Remember Rock 'n' Roll Radio?	We're a Happy Family: A Tribute to Ramones	2003	Dee Dee Ramone/Johnny Ramone/Joey Ramone	Paul Stanley	Ramones cover
+Don't Touch My Ascot	Scooby-Doo! and Kiss: Rock and Roll Mystery	2015	Tony Cervone/Greg Collins/Jared Faber	Paul Stanley/Gene Simmons/Tommy Thayer/Eric Singer/Greg Collins/Jared Faber	With Greg Collins and Jared Faber
+Venus and Mars/Rock Show	The Art of McCartney	2014	Paul McCartney/Linda McCartney	Paul Stanley	Wings cover`;
+
+const DATA = RAW_DATA_TSV.trim().split("\n").map(line=>{
+  const [title, album, year, writers, leads, note] = line.split("\t");
+  const writerMap = creditMap(writers.split("/"));
+  const leadMap = creditMap(leads.split("/"));
+  const instrMap = playingMap(album, Number(year), title);
+  return {
+    title,
+    album,
+    year:Number(year),
+    writers:writerMap,
+    lead:leadMap,
+    back:backingMap(leadMap, normalizedMap(instrMap)),
+    instr:instrMap,
+    note:note || ""
+  };
+});
+
+const fmt = n => (Math.round(n * 100) / 100).toFixed(2).replace(/\.00$/,"").replace(/(\.\d)0$/,"$1");
+const round1 = n => Math.round(n * 10) / 10;
+const esc = s => String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+const songId = d => "song-" + d.idx;
+
+function normalizedMap(map){
+  const out = {};
+  MEMBERS.forEach(m => out[m] = Number(map && map[m] || 0));
+  return out;
+}
+
+function scoreSong(raw, idx){
+  const d = Object.assign({idx}, raw);
+  const writers = normalizedMap(d.writers);
+  const lead = normalizedMap(d.lead);
+  const back = normalizedMap(d.back);
+  const instr = normalizedMap(d.instr || DEFAULT_PLAY);
+  const comp = {};
+  const total = {};
+  let songTotal = 0;
+  MEMBERS.forEach(m=>{
+    comp[m] = {
+      write: writers[m] / 100 * WEIGHTS.write,
+      lead: lead[m] / 100 * WEIGHTS.lead,
+      back: back[m] / 100 * WEIGHTS.back,
+      instr: instr[m] / 100 * WEIGHTS.instr
+    };
+    total[m] = comp[m].write + comp[m].lead + comp[m].back + comp[m].instr;
+    songTotal += total[m];
+  });
+  const pct = {};
+  MEMBERS.forEach(m=> pct[m] = songTotal ? round1(total[m] / songTotal * 100) : 0);
+  return Object.assign({}, d, {writers, lead, back, instr, comp, total, pct});
+}
+
+function summaryExtremes(rows){
+  const out = {};
+  MEMBERS.forEach(m=>{
+    let high = null;
+    rows.forEach(d=>{
+      if(!high || d.pct[m] > high.pct || (d.pct[m] === high.pct && d.idx < high.song.idx)) high = {song:d, pct:d.pct[m]};
+    });
+    out[m] = {
+      high,
+      top: rows.filter(d=>{
+        const max = Math.max.apply(null, MEMBERS.map(x=>d.pct[x]));
+        return max > 0 && d.pct[m] === max;
+      }).length,
+      majority: rows.filter(d=>d.pct[m] >= 50).length
+    };
+  });
+  return out;
+}
+
+function statFor(rows){
+  const stat = {
+    count: rows.length,
+    avg:{}, leads:{}, writers:{}, extremes:summaryExtremes(rows)
+  };
+  MEMBERS.forEach(m=>{
+    stat.avg[m] = rows.length ? round1(rows.reduce((sum,d)=>sum + d.pct[m], 0) / rows.length) : 0;
+    stat.leads[m] = round1(rows.reduce((sum,d)=>sum + d.lead[m] / 100, 0));
+    stat.writers[m] = round1(rows.reduce((sum,d)=>sum + d.writers[m] / 100, 0));
+  });
+  return stat;
+}
+
+function dynamicStats(rows){
+  const stat = statFor(rows);
+  stat.albums = {};
+  stat.album_order = [];
+  rows.forEach(d=>{
+    if(!stat.album_order.includes(d.album)) stat.album_order.push(d.album);
+  });
+  stat.album_order.forEach(album=>{
+    stat.albums[album] = statFor(rows.filter(d=>d.album === album));
+  });
+  return stat;
+}
+
+function writersText(d){
+  return MEMBERS.filter(m=>d.writers[m] > 0).map(m=>`${m} ${fmt(d.writers[m])}%`).join(" / ");
+}
+
+function leadText(d){
+  const leads = MEMBERS.filter(m=>d.lead[m] > 0).map(m=>d.lead[m] === 100 ? m : `${m} ${fmt(d.lead[m])}%`);
+  return leads.length ? leads.join(" / ") : "None";
+}
+
+function renderLegend(){
+  document.getElementById("legend").innerHTML = MEMBERS.map(m=>
+    `<span class="leg"><span class="sw ${CLS[m]}"></span>${m === "Other" ? "Other writers/players" : m}</span>`
+  ).join("");
+}
+
+function renderAlbumOptions(){
+  const albums = [];
+  DATA.forEach(d=>{ if(!albums.includes(d.album)) albums.push(d.album); });
+  document.getElementById("album").innerHTML = `<option value="">All albums</option>` + albums.map(a=>`<option>${esc(a)}</option>`).join("");
+}
+
+function summaryStripHTML(stat){
+  return MEMBERS.map(m=>{
+    const ex = stat.extremes[m];
+    const high = ex && ex.high
+      ? `<b>High</b> ${ex.high.pct}%<a class="song-ref" href="#${songId(ex.high.song)}" data-song-idx="${ex.high.song.idx}">"${esc(ex.high.song.title)}"</a>`
+      : `<b>High</b> --`;
+    const row2 = m === "Other"
+      ? `<div class="row2"><span>co-writes + sessions</span><span class="blankline" aria-hidden="true"></span></div>`
+      : `<div class="row2"><span class="statline">${stat.leads[m]} <span>lead vox</span></span><span class="statline">${stat.writers[m]} <span>writer</span></span></div>`;
+    return `<div class="scol">
+      <div class="who"><span class="sw ${CLS[m]}"></span>${m}</div>
+      <div class="big">${stat.avg[m]}%</div>
+      <div class="biglab">avg share</div>
+      ${row2}
+      <div class="row3">${high}${ex.top} <span>top share</span> &middot; ${ex.majority} <span>50%+</span></div>
+    </div>`;
+  }).join("");
+}
+
+function renderGlobalSummary(stats){
+  document.getElementById("summaryTitle").textContent = `All ${stats.count} songs`;
+  document.getElementById("summary").innerHTML = summaryStripHTML(stats);
+}
+
+function renderAlbumSummary(album, stats){
+  const el = document.getElementById("albumSummary");
+  const title = document.getElementById("albumSummaryTitle");
+  const count = document.getElementById("albumSummaryCount");
+  const grid = document.getElementById("albumSummaryGrid");
+  const stat = album && stats.albums ? stats.albums[album] : null;
+  if(!stat){
+    el.hidden = true;
+    grid.innerHTML = "";
+    return;
+  }
+  title.textContent = album;
+  count.textContent = stat.count + (stat.count === 1 ? " song" : " songs");
+  grid.innerHTML = summaryStripHTML(stat);
+  el.hidden = false;
+}
+
+function breakdown(d){
+  let html = `<div class="grid">
+    <div class="hd">Member</div><div class="hd">Write</div><div class="hd">Lead</div><div class="hd">Back</div><div class="hd">Play</div><div class="hd">Total</div><div class="hd">Share</div>`;
+  MEMBERS.filter(m=>d.total[m] > .001).forEach(m=>{
+    const c = d.comp[m];
+    const cell = v => v > .001 ? `<div class="c">${fmt(v)}</div>` : `<div class="c zero">&middot;</div>`;
+    html += `<div class="c name"><span class="dot ${CLS[m]}"></span>${m}</div>`
+      + cell(c.write) + cell(c.lead) + cell(c.back) + cell(c.instr)
+      + `<div class="c tot">${fmt(d.total[m])}</div>`
+      + `<div class="c share">${d.pct[m]}%</div>`;
+  });
+  return html + `</div>`;
+}
+
+function card(d){
+  const segs = MEMBERS.map(m=>{
+    if(d.pct[m] <= 0) return "";
+    const c = d.comp[m];
+    const title = `${m}: ${d.pct[m]}% - Writing ${fmt(c.write)}, Lead ${fmt(c.lead)}, Backing ${fmt(c.back)}, Playing ${fmt(c.instr)} (total ${fmt(d.total[m])} pts)`;
+    return `<div class="seg ${CLS[m]}" data-w="${d.pct[m]}" data-m="${m}" title="${esc(title)}"></div>`;
+  }).join("");
+  return `<article class="song" id="${songId(d)}" tabindex="-1" data-no="${String(d.idx).padStart(3,"0")}">
+    <div class="s-title">${esc(d.title)}</div>
+    <div class="s-meta">
+      <span class="pill">${esc(d.album)} &middot; ${d.year}</span>
+      <span class="pill">Writing: <b>${esc(writersText(d))}</b></span>
+      <span class="pill">Lead vocal: <b>${esc(leadText(d))}</b></span>
+    </div>
+    <div class="mix-wrap"><div class="mix">${segs}</div></div>
+    <div class="break">
+      <div class="break-h"><span>Scoring breakdown &middot; points</span><span>100-pt model</span></div>
+      <div class="b-scroll">${breakdown(d)}</div>
+    </div>
+    ${d.note ? `<div class="note">${esc(d.note)}</div>` : ""}
+  </article>`;
+}
+
+const scored = DATA.map((d,i)=>scoreSong(d, i + 1));
+const stats = dynamicStats(scored);
+const qEl = document.getElementById("q");
+const albumEl = document.getElementById("album");
+const sortEl = document.getElementById("sort");
+const listEl = document.getElementById("list");
+const countEl = document.getElementById("count");
+
+function fitBarLabels(){
+  listEl.querySelectorAll(".seg").forEach(seg=>{
+    const pct = Number(seg.dataset.w);
+    const member = seg.dataset.m;
+    seg.style.width = pct + "%";
+    seg.textContent = pct >= 9 ? `${member[0]} ${pct}%` : `${pct}%`;
+  });
+}
+
+function render(){
+  const q = qEl.value.trim().toLowerCase();
+  const album = albumEl.value;
+  renderGlobalSummary(stats);
+  renderAlbumSummary(album, stats);
+  let rows = scored.filter(d=>{
+    if(album && d.album !== album) return false;
+    const hay = [d.title, d.album, writersText(d), leadText(d), d.note].join(" ").toLowerCase();
+    return !q || hay.includes(q);
+  });
+  const sort = sortEl.value;
+  if(sort === "year") rows.sort((a,b)=>a.year-b.year || a.idx-b.idx);
+  else if(sort === "title") rows.sort((a,b)=>a.title.localeCompare(b.title));
+  else if(MEMBERS.includes(sort)) rows.sort((a,b)=>b.pct[sort]-a.pct[sort] || a.idx-b.idx);
+  else rows.sort((a,b)=>a.idx-b.idx);
+  countEl.textContent = rows.length + (rows.length === 1 ? " song" : " songs");
+  listEl.innerHTML = rows.map(card).join("");
+  requestAnimationFrame(fitBarLabels);
+}
+
+document.addEventListener("click", e=>{
+  const a = e.target.closest("a.song-ref");
+  if(!a) return;
+  const target = scored.find(d=>d.idx === Number(a.dataset.songIdx));
+  if(!target) return;
+  qEl.value = "";
+  if(albumEl.value && albumEl.value !== target.album) albumEl.value = target.album;
+  render();
+  requestAnimationFrame(()=>{
+    const el = document.getElementById(songId(target));
+    if(el){ el.scrollIntoView({block:"start"}); el.focus({preventScroll:true}); }
+  });
+});
+qEl.addEventListener("input", render);
+albumEl.addEventListener("change", render);
+sortEl.addEventListener("change", render);
+document.getElementById("trackStamp").textContent = DATA.length + " songs";
+renderLegend();
+renderAlbumOptions();
+render();
+</script>
+</body>
+</html>
